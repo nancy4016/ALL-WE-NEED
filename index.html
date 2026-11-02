@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>allWeNeEd - Control Center</title>
+  <script>
+    // Apply the saved theme before first paint so there's no flash
+    try { document.documentElement.setAttribute('data-theme', localStorage.getItem('allweneed-theme') || 'dark'); } catch (e) {}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- PRELOADER SPLASH LAYER -->
+  <div id="websitePreloader">
+    <div class="preloader-text-wrapper">
+      <span class="p-letter">a</span><span class="p-letter">l</span><span class="p-letter">L</span>
+      <span class="p-letter">W</span><span class="p-letter">e</span><span class="p-letter">N</span>
+      <span class="p-letter">e</span><span class="p-letter">E</span><span class="p-letter">d</span>
+    </div>
+  </div>
+
+  <div class="ambient-glow orb-blue"></div>
+  <div class="ambient-glow orb-orange"></div>
+
+  <div class="app-shell-layout">
+    <aside class="left-sidebar-panel glass-surface">
+      <div class="sidebar-top-branding">
+        <h1 class="logo">allWe<span>NeEd</span></h1>
+        <button class="btn-utility" type="button" onclick="toggleTheme()">Theme</button>
+      </div>
+      <div class="sidebar-widget-group">
+        <span class="menu-widget-label">Availability Filter</span>
+        <select class="sidebar-dropdown-menu" id="filterSelectionDropdown" onchange="handleDropdownFilterSelection(this.value)">
+          <option value="all">View All Properties</option>
+          <option value="occupied">View Occupied Only</option>
+          <option value="vacant">View Vacant Only</option>
+        </select>
+      </div>
+      <div class="sidebar-widget-group">
+        <span class="menu-widget-label">Search Portfolio</span>
+        <div class="search-box-wrapper">
+          <span class="search-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+          <input type="text" id="liveSearchInput" placeholder="Unit # or tenant name..." oninput="handleLiveSearch()">
+        </div>
+      </div>
+      <div class="sidebar-widget-group sidebar-actions">
+        <button class="action-trigger-btn" type="button" onclick="toggleModalVisibility(true)">+ Log Property Damage</button>
+        <button class="action-trigger-btn" type="button" onclick="toggleOnboardModalVisibility(true)">Check-In Tenant</button>
+        <button class="action-trigger-btn" type="button" onclick="toggleFinanceOverviewModal(true)">Financial Overview</button>
+        <button class="action-trigger-btn" type="button" onclick="exportPortfolioFinancialSummary()">Export Financials</button>
+      </div>
+    </aside>
+
+    <main class="dashboard-main-container">
+      <section class="glass-surface">
+        <h2 class="panel-title">Property Layout Matrix</h2>
+        <div class="panel-subtitle">Select individual property listings to inspect their active histories.</div>
+
+        <div id="layout-grid" class="housing-vertical-list"></div>
+      </section>
+    </main>
+
+    <div id="inspectorDrawer" class="right-drawer-panel">
+      <button class="drawer-close-btn" type="button" onclick="closeInspectorDrawer()"><span class="close-glass-bubble">&times;</span></button>
+      <section class="ledger-sidebar">
+        <h2 class="panel-title">Unit Inspector Ledger</h2>
+        <div class="panel-subtitle">Real-time status configurations and itemized utility records.</div>
+        <div id="inspectorContent" class="inspector-plain-section"></div>
+      </section>
+    </div>
+
+    <!-- DAMAGE MODAL -->
+    <div id="damageLogModal" class="modal-overlay hidden">
+      <div class="modal-window">
+        <header class="modal-header">
+          <h3 class="modal-title-text">Log Incident Property Damage</h3>
+          <button class="close-glass-bubble" type="button" onclick="toggleModalVisibility(false)">&times;</button>
+        </header>
+        <form id="damageLogForm" onsubmit="handleFormSubmission(event)">
+          <div class="form-field-group"><label for="formTargetUnit">Target Unit Location</label><select id="formTargetUnit" required></select></div>
+          <div class="form-field-group"><label for="formDamageItem">Hardware Description</label><input type="text" id="formDamageItem" placeholder="e.g., Broken glass pane" required></div>
+          <div class="form-field-group"><label for="formRepairCost">Estimated Repair Cost (KSh)</label><input type="number" id="formRepairCost" placeholder="4500" min="0" required></div>
+          <footer class="modal-footer"><button type="button" class="btn-utility" onclick="toggleModalVisibility(false)">Cancel</button><button type="submit" class="action-trigger-btn">Commit Incident Log</button></footer>
+        </form>
+      </div>
+    </div>
+
+    <!-- ONBOARD MODAL -->
+    <div id="tenantOnboardModal" class="modal-overlay hidden">
+      <div class="modal-window">
+        <header class="modal-header">
+          <h3 class="modal-title-text">Check-In New Resident File</h3>
+          <button class="close-glass-bubble" type="button" onclick="toggleOnboardModalVisibility(false)">&times;</button>
+        </header>
+        <form id="tenantOnboardForm" onsubmit="handleTenantOnboardSubmission(event)">
+          <div class="form-field-group"><label for="onboardTargetUnit">Unit ID / House Number</label><input type="text" id="onboardTargetUnit" placeholder="e.g., Apt-4B" required></div>
+          <div class="form-field-group"><label for="onboardTenantName">Full Resident Name</label><input type="text" id="onboardTenantName" placeholder="e.g., Jane Wanjiku" required></div>
+          <div class="form-field-group"><label for="onboardRentAmount">Base Monthly Rent (KSh)</label><input type="number" id="onboardRentAmount" placeholder="e.g., 15000" min="0" required></div>
+
+          <div class="integrated-surcharge-row-grid">
+            <div class="form-field-group"><label for="onboardWaterCost">Water Fee (KSh)</label><input type="number" id="onboardWaterCost" placeholder="e.g., 500" min="0"></div>
+            <div class="form-field-group"><label for="onboardPowerCost">Power Token (Optional)</label><input type="number" id="onboardPowerCost" placeholder="e.g., 1000" min="0"></div>
+            <div class="form-field-group"><label for="onboardGarbageCost">Garbage / Waste (KSh)</label><input type="number" id="onboardGarbageCost" placeholder="e.g., 200" min="0"></div>
+          </div>
+          <footer class="modal-footer"><button type="button" class="btn-utility" onclick="toggleOnboardModalVisibility(false)">Cancel</button><button type="submit" class="action-trigger-btn">Complete Onboarding Flow</button></footer>
+        </form>
+      </div>
+    </div>
+
+    <!-- FINANCIAL OVERVIEW MODAL -->
+    <div id="financeOverviewModal" class="modal-overlay modal-overlay-wide hidden">
+      <div class="modal-window modal-window-wide">
+        <header class="modal-header">
+          <h3 class="modal-title-text">Financial Overview</h3>
+          <button class="close-glass-bubble" type="button" onclick="toggleFinanceOverviewModal(false)">&times;</button>
+        </header>
+        <div id="financeOverviewContent"></div>
+      </div>
+    </div>
+
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
